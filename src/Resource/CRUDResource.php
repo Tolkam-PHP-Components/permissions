@@ -4,10 +4,10 @@ namespace Tolkam\Permissions\Resource;
 
 class CRUDResource extends Resource
 {
-    public const CREATE = 'C';
-    public const READ   = 'R';
-    public const UPDATE = 'U';
-    public const DELETE = 'D';
+    public const CREATE = 'create';
+    public const READ   = 'read';
+    public const UPDATE = 'update';
+    public const DELETE = 'delete';
     
     /**
      * @param string $name
