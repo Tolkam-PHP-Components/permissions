@@ -5,7 +5,7 @@ namespace Tolkam\Permissions;
 use Tolkam\Permissions\Resource\ResourceInterface;
 use Tolkam\Permissions\Role\RoleInterface;
 
-class PermissionsManager
+class PermissionsManager implements PermissionAwareInterface
 {
     protected const SEP_ROLE       = '.';
     protected const SEP_PERMISSION = '_';
@@ -33,6 +33,29 @@ class PermissionsManager
         foreach ($configurators as $configurator) {
             $configurator->configure($this);
         }
+    }
+    
+    /**
+     * @inheritDoc
+     */
+    public function can(string $roleName, string $action, string $resourceName): bool
+    {
+        $role = $this->roles[$roleName] ?? null;
+        
+        // no role
+        if ($role === null) {
+            return false;
+        }
+        
+        // check role first
+        foreach ($role->getParents() as $parent) {
+            $path = $this->path($parent->getName(), $action, $resourceName);
+            if (isset($this->permissions[$path])) {
+                return true;
+            }
+        }
+        
+        return isset($this->permissions[$this->path($roleName, $action, $resourceName)]);
     }
     
     /**
@@ -129,33 +152,6 @@ class PermissionsManager
     public function getResource(string $name): ?ResourceInterface
     {
         return $this->resources[$name] ?? null;
-    }
-    
-    /**
-     * @param string $roleName
-     * @param string $action
-     * @param string $resourceName
-     *
-     * @return bool
-     */
-    public function can(string $roleName, string $action, string $resourceName): bool
-    {
-        $role = $this->roles[$roleName] ?? null;
-        
-        // no role
-        if ($role === null) {
-            return false;
-        }
-        
-        // check role first
-        foreach ($role->getParents() as $parent) {
-            $path = $this->path($parent->getName(), $action, $resourceName);
-            if (isset($this->permissions[$path])) {
-                return true;
-            }
-        }
-        
-        return isset($this->permissions[$this->path($roleName, $action, $resourceName)]);
     }
     
     /**
