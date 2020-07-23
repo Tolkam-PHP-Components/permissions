@@ -14,13 +14,13 @@ class Role implements RoleInterface
     /**
      * @var Role[]
      */
-    protected array $parents;
+    protected array $parents = [];
     
     /**
      * @param string $name
-     * @param Role   ...$parents
+     * @param string ...$parents
      */
-    public function __construct(string $name, Role ...$parents)
+    public function __construct(string $name, string ...$parents)
     {
         if (empty($name)) {
             throw new InvalidArgumentException(sprintf('Invalid role name "%s"', $name));

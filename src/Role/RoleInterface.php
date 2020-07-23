@@ -14,7 +14,7 @@ interface RoleInterface
     /**
      * Gets the parents
      *
-     * @return Role[]
+     * @return string[]
      */
     public function getParents(): array;
 }
