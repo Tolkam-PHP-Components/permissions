@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Tolkam\Permissions\Permission;
+namespace Tolkam\Permissions\Grant;
 
-class Permission implements PermissionInterface
+class Grant implements GrantInterface
 {
     /**
      * @var string

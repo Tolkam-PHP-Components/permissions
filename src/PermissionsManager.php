@@ -2,7 +2,7 @@
 
 namespace Tolkam\Permissions;
 
-use Tolkam\Permissions\Permission\PermissionInterface;
+use Tolkam\Permissions\Grant\GrantInterface;
 use Tolkam\Permissions\Resource\ResourceInterface;
 use Tolkam\Permissions\Role\RoleInterface;
 
@@ -19,14 +19,14 @@ class PermissionsManager implements PermissionAwareInterface
     protected array $resources = [];
     
     /**
-     * @var PermissionInterface[]
+     * @var GrantInterface[]
      */
-    protected array $permissions = [];
+    protected array $grants = [];
     
     /**
      * @var string[]
      */
-    private array $compiled = [];
+    private array $permissions = [];
     
     /**
      * @var bool
@@ -51,14 +51,14 @@ class PermissionsManager implements PermissionAwareInterface
         
         // check own permissions first
         $path = $this->buildPath($roleName, $action, $resourceName);
-        if (isset($this->compiled[$path])) {
+        if (isset($this->permissions[$path])) {
             return true;
         }
         
         // check parents
         foreach ($role->getParents() as $parent) {
             $path = $this->buildPath($parent, $action, $resourceName);
-            if (isset($this->compiled[$path])) {
+            if (isset($this->permissions[$path])) {
                 return true;
             }
         }
@@ -97,19 +97,19 @@ class PermissionsManager implements PermissionAwareInterface
             }
         }
         
-        foreach ($this->permissions as $permission) {
-            $roleName = $permission->getRoleName();
-            $resourceName = $permission->getResourceName();
-            $permissionActions = $permission->getActions();
+        foreach ($this->grants as $grant) {
+            $roleName = $grant->getRoleName();
+            $resourceName = $grant->getResourceName();
+            $grantActions = $grant->getActions();
             
-            if (!$role = $this->getRole($roleName)) {
+            if (!$role = $this->roles[$roleName] ?? null) {
                 throw new PermissionsManagerException(sprintf(
                     'No "%s" role is registered',
                     $roleName
                 ));
             }
             
-            if (!$resource = $this->getResource($resourceName)) {
+            if (!$resource = $this->resources[$resourceName] ?? null) {
                 throw new PermissionsManagerException(sprintf(
                     'No "%s" resource is registered',
                     $resourceName
@@ -117,8 +117,8 @@ class PermissionsManager implements PermissionAwareInterface
             }
             
             $resourceActions = $resource->getActions();
-            if (!empty($permissionActions)) {
-                if ($invalid = array_diff($permissionActions, $resourceActions)) {
+            if (!empty($grantActions)) {
+                if ($invalid = array_diff($grantActions, $resourceActions)) {
                     throw new PermissionsManagerException(sprintf(
                         'Some actions ("%s") were not found on resource "%s"',
                         implode('", "', $invalid),
@@ -128,18 +128,18 @@ class PermissionsManager implements PermissionAwareInterface
             }
             else {
                 // use all available actions if specific actions are not provided
-                $permissionActions = $resourceActions;
+                $grantActions = $resourceActions;
             }
             
-            // build own permission path
-            $this->compilePaths($roleName, $resourceName, $permissionActions);
+            // build own permission
+            $this->setPermissions($roleName, $resourceName, $grantActions);
             
-            // build inherited permissions paths
+            // build inherited permissions
             foreach ($parents as $r => $p) {
                 if ($r !== $roleName) { // exclude self
                     foreach ($p as $parentName) {
                         if ($parentName === $roleName) {
-                            $this->compilePaths($r, $resourceName, $permissionActions);
+                            $this->setPermissions($r, $resourceName, $grantActions);
                         }
                     }
                 }
@@ -178,37 +178,17 @@ class PermissionsManager implements PermissionAwareInterface
     }
     
     /**
-     * @param PermissionInterface[] $permissions
+     * @param GrantInterface[] $grants
      *
      * @return $this
      */
-    public function addPermissions(PermissionInterface ...$permissions): self
+    public function addGrants(GrantInterface ...$grants): self
     {
-        foreach ($permissions as $permission) {
-            $this->permissions[] = $permission;
+        foreach ($grants as $grant) {
+            $this->grants[] = $grant;
         }
         
         return $this;
-    }
-    
-    /**
-     * @param string $name
-     *
-     * @return RoleInterface|null
-     */
-    public function getRole(string $name): ?RoleInterface
-    {
-        return $this->roles[$name] ?? null;
-    }
-    
-    /**
-     * @param string $name
-     *
-     * @return ResourceInterface|null
-     */
-    public function getResource(string $name): ?ResourceInterface
-    {
-        return $this->resources[$name] ?? null;
     }
     
     /**
@@ -216,14 +196,14 @@ class PermissionsManager implements PermissionAwareInterface
      * @param string $resourceName
      * @param array  $actions
      */
-    private function compilePaths(
+    private function setPermissions(
         string $roleName,
         string $resourceName,
         array $actions
     ) {
         foreach ($actions as $action) {
             $path = $this->buildPath($roleName, $action, $resourceName);
-            $this->compiled[$path] = true;
+            $this->permissions[$path] = true;
         }
     }
     

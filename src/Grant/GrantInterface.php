@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Tolkam\Permissions\Permission;
+namespace Tolkam\Permissions\Grant;
 
-interface PermissionInterface
+interface GrantInterface
 {
     /**
      * Gets the roleName
