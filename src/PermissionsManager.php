@@ -24,7 +24,7 @@ class PermissionsManager implements PermissionAwareInterface
     protected array $grants = [];
     
     /**
-     * @var string[]
+     * @var array
      */
     private array $permissions = [];
     
@@ -50,15 +50,13 @@ class PermissionsManager implements PermissionAwareInterface
         }
         
         // check own permissions first
-        $path = $this->buildPath($roleName, $action, $resourceName);
-        if (isset($this->permissions[$path])) {
+        if (isset($this->permissions[$roleName][$resourceName][$action])) {
             return true;
         }
         
         // check parents
         foreach ($role->getParents() as $parent) {
-            $path = $this->buildPath($parent, $action, $resourceName);
-            if (isset($this->permissions[$path])) {
+            if (isset($this->permissions[$parent][$resourceName][$action])) {
                 return true;
             }
         }
@@ -88,12 +86,10 @@ class PermissionsManager implements PermissionAwareInterface
         // flatten parents
         $parents = [];
         foreach ($this->roles as $role) {
+            $r = $role->getName();
             $p = $role->getParents();
             foreach ($p as $parent) {
-                $parents[$role->getName()] = array_merge(
-                    [$parent],
-                    $parents[$parent] ?? []
-                );
+                $parents[$r] = array_merge($parents[$r] ?? [], $parents[$parent] ?? [], [$parent]);
             }
         }
         
@@ -131,10 +127,10 @@ class PermissionsManager implements PermissionAwareInterface
                 $grantActions = $resourceActions;
             }
             
-            // build own permission
+            // set own permissions
             $this->setPermissions($roleName, $resourceName, $grantActions);
             
-            // build inherited permissions
+            // set inherited permissions
             foreach ($parents as $r => $p) {
                 if ($r !== $roleName) { // exclude self
                     foreach ($p as $parentName) {
@@ -192,6 +188,20 @@ class PermissionsManager implements PermissionAwareInterface
     }
     
     /**
+     * Gets the permissions
+     *
+     * @param string|null $roleName
+     *
+     * @return array
+     */
+    public function getPermissions(string $roleName = null): array
+    {
+        return $roleName
+            ? $this->permissions[$roleName] ?? []
+            : $this->permissions;
+    }
+    
+    /**
      * @param string $roleName
      * @param string $resourceName
      * @param array  $actions
@@ -202,22 +212,7 @@ class PermissionsManager implements PermissionAwareInterface
         array $actions
     ) {
         foreach ($actions as $action) {
-            $path = $this->buildPath($roleName, $action, $resourceName);
-            $this->permissions[$path] = true;
+            $this->permissions[$roleName][$resourceName][$action] = true;
         }
-    }
-    
-    /**
-     * Builds permission path
-     *
-     * @param string $role
-     * @param string $action
-     * @param string $resource
-     *
-     * @return string
-     */
-    private function buildPath(string $role, string $action, string $resource)
-    {
-        return $role . '.' . $action . '_' . $resource;
     }
 }
