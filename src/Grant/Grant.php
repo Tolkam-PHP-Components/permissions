@@ -20,15 +20,15 @@ class Grant implements GrantInterface
     protected array $actions;
     
     /**
-     * @param string $roleName
-     * @param string $resourceName
-     * @param array  $actions
+     * @param string     $roleName
+     * @param string     $resourceName
+     * @param array|null $actions
      */
-    public function __construct(string $roleName, string $resourceName, array $actions)
+    public function __construct(string $roleName, string $resourceName, ?array $actions = null)
     {
         $this->roleName = $roleName;
         $this->resourceName = $resourceName;
-        $this->actions = $actions;
+        $this->actions = $actions ?? [];
     }
     
     /**

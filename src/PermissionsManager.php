@@ -98,7 +98,7 @@ class PermissionsManager implements PermissionAwareInterface
             $resourceName = $grant->getResourceName();
             $grantActions = $grant->getActions();
             
-            if (!$role = $this->roles[$roleName] ?? null) {
+            if (!$this->roles[$roleName] ?? null) {
                 throw new PermissionsManagerException(sprintf(
                     'No "%s" role is registered',
                     $roleName
@@ -123,8 +123,8 @@ class PermissionsManager implements PermissionAwareInterface
                 }
             }
             else {
-                // use all available actions if specific actions are not provided
-                $grantActions = $resourceActions;
+                // none by default
+                $grantActions = [];
             }
             
             // set own permissions
